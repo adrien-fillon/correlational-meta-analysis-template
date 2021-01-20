@@ -1,0 +1,305 @@
+---
+title: "Construct 1 and 2 meta-analysis"
+description: null
+output:
+  html_document:
+    theme: united
+    toc: yes
+  html_notebook: default
+  pdf_document:
+    fig_height: 6
+    fig_width: 8
+  word_document: default
+Author: adrien 
+---
+
+```{r setting, include=FALSE}
+
+```
+
+This is a RMarkdown template for Correlational studies meta-analysis in Psychology, developed by Adrien Fillon (Ph.D. student) and Dr. Gilad Feldman (Assistant Professor). This is integrated and adapted with reference to Lim and Feldman (2020) and Nanakdewa et al. (2020); experimental meta-analysis template (Yeung et al., 2020), a primer of correlational studies (Quintana, 2015) as well as Fillon et al. (2020) Impact of past behavior normality on regret: Meta-analysis of exceptionality effect. The corresponding datafile is "Correlational-Studies-Meta-Analysis-Template.xlsx" (simulated data). 
+
+For your own analysis, please replace "Variables", Analysis" and "Moderator" with meaningful labels of Cells descriptives column heads, Dependent Variables, Moderators column heads and Moderators categories. In the excel sheet, the box in orange are facultative for the simulation or pretest. To replace efficiently, in RStudio, you can click "edit" then "Replace and find" (or Ctrl+Shift+J). Similarly, in Excel, you can click "Home" then "Find & Select", "Replace", "Replace all".
+
+```{r intro, include=FALSE}
+
+#This part is used to set up R: install the packages, load libraries and set formatting options.
+#SET WORKING DIRECTORY#
+Sys.setlocale("LC_ALL", "")
+filename<-"Correlational-Studies-Meta-Analysis-Template-coding-sheet.xlsx"
+
+#SETTING UP#
+#Set year and language used in R environment
+
+Year<-as.numeric(format(Sys.Date(), "%Y"))
+
+Sys.setenv(LANG = "en")
+
+# Type the last name of the first author here
+Author<-"Lastname"
+
+Year <- 2020
+
+# Meta-Analysis Title
+Title<-"Correlational studies meta-analysis"
+
+
+```
+
+
+
+```{r installpackage, include=FALSE}
+#This part is used to set up R: install the packages, load libraries and set formatting options.
+
+if(!require(knitr)){install.packages('knitr', dependencies = TRUE)}
+library("knitr")
+
+#In case of packages -- invisible code does not work use install.packages below and load libraries manually"
+
+list.of.packages <- c("readxl", "psychmeta", "TOSTER", "metafor", "tidyverse", 
+                      "metaviz")
+
+new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[
+  ,"Package"])]
+if(length(new.packages)) install.packages(new.packages, dependencies = TRUE)
+invisible(lapply(list.of.packages, library, character.only = TRUE))
+
+Year<-as.numeric(format(Sys.Date(), "%Y"))
+
+Sys.setenv(LANG = "en")
+
+# Type the last name of the first author here
+Author<-"Lastname"
+
+Year <- 2020
+
+# Meta-Analysis Title
+Title<-"Correlational meta-analysis"
+
+# This file conducts a meta-analysis of correlational studies. Define the variable names for the relationship of interest
+X<-"Construct 1"
+Y<-"Construct 2"
+
+#FORMAT#
+
+#Set formatting options : scientific notation and 3 digits.
+options(scipen=999, digits = 3)
+```
+
+
+```{r importfile, include=FALSE}
+
+# Read the datafile. IMPORTANT: i) Please ensure the datafile is in the same folder as the .R file is in, otherwise the datafile cannot be read. ii) Please ensure you "skip" the right number of columns so that the datafile can be read properly. For example, if the headers start at Column 4, type skip = 3.
+
+dataset = read_excel(filename, sheet = "Main Coding Sheet", skip = 2)
+
+dataset$articlestudy <- paste(dataset$Article, "/", dataset$Study, "/", 
+                              dataset$Sample)
+
+```
+
+# Correlation analyses
+This file documents the analyses conducted for `r Author` (`r Year`) *`r Title`*
+Analyses were conducted using the file `r filename`, to examine the relationship between `r X` and `r Y`.
+
+# MAIN META ANALYSES
+
+```{r main, include=FALSE}
+
+# For the ma_r function, use the ma_method wanted : "bb" is barebones, "ic" is individual correction and "ad" is artifact distribution. By default, use "ad".
+# Change Construct1 and 2 by yours and change rxx and ryy by your reliability coefficients.
+# You can change the order displayed by using the argument construct_order = c("Construct1.1", "Construct1.2", "Construct1.3", etc).
+
+
+res_mainanalysis <- ma_r(rxyi = dataset$r, n = dataset$N.post, sample_id = 
+                           dataset$articlestudy, ma_method = "ad",
+                      construct_x = dataset$Construct1, construct_y =
+                        dataset$Construct2, rxx = dataset$Construct1.reliability
+                      , ryy = dataset$Construct2.reliability,
+                      control = control_psychmeta(use_all_arts = TRUE), 
+                      data = dataset)
+res_mainanalysis <- plot_forest(res_mainanalysis)
+res_mainanalysis <- sensitivity(res_mainanalysis, leave1out = FALSE, 
+                                bootstrap = FALSE)
+metabulate(res_mainanalysis, "results_mainanalysis")
+
+# The metabulate Function above will create an output word document with all
+# the main correlations from the main document
+```
+#Mahmoud: I think it would be a good idea to write a brief description of what the authors will find and a small aspect of how to report the findings. This will help guide the readers to understand what they are expected to see following the previous chunk.
+
+Inter-relations
+#Mahmoud: Explain what this chunk's purpose is for.
+
+```{r inter, message=FALSE, warning=FALSE, include=FALSE}
+
+# Running the same analysis, using the correlation in the interrelation sheet.
+
+datinter = read_excel(filename, sheet = "Interrelation", skip = 2)
+
+datinter$articlestudy <- paste(datinter$Article, "/", datinter$Study, 
+                               "/", datinter$Sample)
+
+res_inter<- ma_r(rxyi = datinter$r, n = datinter$N.post, 
+                 sample_id = datinter$articlestudy, ma_method = "ad",
+                      construct_x = datinter$`Variable 1`,
+                 construct_y = datinter$`Variable 2`, 
+                 control = control_psychmeta(use_all_arts = TRUE), 
+                      data = datinter)
+res_inter <- plot_forest(res_inter)
+res_inter <- sensitivity(res_inter, leave1out = FALSE, bootstrap = FALSE)
+metabulate(res_inter, "results_interrelation")
+
+
+```
+
+# Moderator analysis
+## Moderator 1
+
+```{r mod1, message=FALSE, warning=FALSE, include=FALSE}
+#this chunk will create the same output word document of correlation as in main analysis, with the moderator1 as moderator.
+# You can easily create other models by copy-paste this section and change the moderator in the ma_r function. Each time you add a moderator, create a new chunk and change the moderator and the names of the variables.
+
+res_moderator1 <- ma_r(rxyi = dataset$r, n = dataset$N.post, 
+                       sample_id = dataset$articlestudy, ma_method = "ad",
+                      construct_x = dataset$Construct1, 
+                      construct_y = dataset$Construct2, 
+                      rxx = dataset$Construct1.reliability, 
+                      ryy = dataset$Construct2.reliability, 
+                      moderators = Moderator1, 
+                      control = control_psychmeta(use_all_arts = TRUE), 
+                      data = dataset)
+res_moderator1 <- plot_forest(res_moderator1)
+res_moderator1 <- sensitivity(res_moderator1, leave1out = FALSE, 
+                              bootstrap = FALSE)
+metabulate(res_moderator1, "results_moderator1")
+
+
+
+```
+
+## Publication.Status 
+
+1 = Published
+0 = Unpublished
+
+
+```{r pubstatus, message=FALSE, warning=FALSE, include=FALSE}
+
+# This chunk is using publication status as moderator. This will be used for analysis of possible publication bias due to file-drawer problem.It will create a word output of all the correlations will two levels = published and unpublished to see if the publication status influences the results.
+
+res_pubstat<- ma_r(rxyi = dataset$r, n = dataset$N.post, 
+                   sample_id = dataset$articlestudy, ma_method = "ad",
+                      construct_x = dataset$Construct1, 
+                   construct_y = dataset$Construct2,
+                      rxx = dataset$Construct1.reliability,
+                   ryy = dataset$Construct2.reliability, 
+                   moderators = Publication.Status, 
+                   control = control_psychmeta(use_all_arts = TRUE), 
+                   data = dataset)
+res_pubstat <- plot_forest(res_pubstat)
+res_pubstat <- sensitivity(res_pubstat, leave1out = FALSE, bootstrap = FALSE)
+metabulate(res_pubstat, "results_pubstatus")
+
+
+```
+
+# Plots
+
+```{r plots, echo=FALSE, message=FALSE, warning=FALSE}
+# This chunk will create forest plots and cumulative meta-analysis plots.
+# To change the variables plotted, set `ma_obj` to the appropriate meta-analyis
+# results (res_mainanalysis, res_moderator1, res_pubstat) and `variables` to a vector for the desired construct pair--for example, `c("Construct1.1", "Construct2.1")`.
+
+ma_obj <- res_mainanalysis
+variables <- c("Construct1.1", "Construct2.1")
+get_plots(ma_obj, analyses = list(construct_pair = list(variables)),
+          plot_types = "forest")$forest[[1]]$moderated$barebones
+
+
+# Idem for viewing cumulative meta-analysis plots
+
+ma_obj <- res_mainanalysis
+variables <-c("Construct1.1", "Construct2.1")
+get_plots(ma_obj, analyses = list(construct_pair = list(variables)),
+          plot_types = "cumulative")$cumulative[[1]]$artifact_distribution$true_score$plots
+
+```
+# Equivalence test
+
+```{r et, echo=FALSE, message=FALSE, warning=FALSE}
+# This chunk is only of use if you want to test equivalence for a specific correlation.
+
+# Use N in the meta-analysis as n, r as the mean true-score correlation, and lower and higer bound as your choice.
+#  benchmarks for low/medium/high effect are r = .1, r = .3, and r = .5 (Lakens, 2017)
+
+#TOSTr(n, r, low_eqbound_r, high_eqbound_r, alpha, plot = TRUE, verbose = TRUE)
+
+# here is an example
+# TOSTr(n = 5843, r = .34, low_eqbound_r = 0.27, high_eqbound_r = .42, alpha=0.5, plot = TRUE, verbose = TRUE)
+
+```
+
+# Power of studies included in the analysis
+```{r power, echo=FALSE, message=FALSE, warning=FALSE}
+# This chunk will help you create a sunset plot to view the power of every studies in the meta-anaysis depending of the correlation observed.
+#We create the dataset.
+dataset <- escalc(measure = "ZCOR", ri = r, 
+                     ni = N.post, data = dataset, append = TRUE)
+
+# Change filter based on the power calculation you want to make. Here is the example for Construct1.1.
+
+dat <- dataset %>% 
+  filter( Construct1 == "Construct1.1") %>%
+  select(articlestudy, yi, vi)
+
+#we create a meta-analysis object
+res <- rma.uni(yi, vi, data=dat) 
+#and we vizualize the power of the analysis.
+viz_sunset(res, 
+           contours = TRUE,
+           power_contours =  "continuous")
+
+# One can also add the argument true_effect = 0.XX for the minimal effect size of interest.
+
+```
+
+# Mean reliability scale (for supplementary)
+```{r RS, echo=FALSE, message=FALSE, warning=FALSE}
+# This chunk will help you create a mean reliability scale table that can replace the empty one in supplementary in ordre to assess the quality of the scales we used.
+
+# the internal psychmeta function summarize_ads can summarize the mean and variance of artifact distribution.
+# for an understanding of this table, see Wiernik & Dahlke (2019).
+
+#The amount of measurement error in a sample of scores is quantified using a reliability coefficient, defined as the proportion of the observed-score variance that is consistent (i.e., believed to be “true”). Conceptually, the reliability coefficient is the correlation between two parallel measures of a construct. The square root of the reliability coefficient also called the measurement quality index; Schmidt & Hunter, 2015) is the correlation between the measured (observed) variable and its underlying latent variable.
+
+knitr::kable(
+adrien<-psychmeta:::summarize_ads(res_mainanalysis) %>% 
+  filter(Artifact %in% c("rxxi_irr", "qxi_irr")) %>%
+  as_tibble() %>% 
+  mutate(k_total = format_num(.$k_total, digits = 0),
+         N_total = format_num(.$N_total, digits = 0), 
+         mean = format_num(.$mean, digits = 3),
+         sd = format_num(.$sd, digits = 3),
+         sd_res = format_num(.$sd_res, digits = 3))
+)
+
+```
+
+# Other functions
+
+```{r other, echo=FALSE, message=FALSE, warning=FALSE}
+# This chunk gives you other functions that can be of your interest in conducting a meta-analysis with psychmeta.
+
+# you can easily transform stats to correlation coefficient by using
+
+# convert_es(es = 1,    input_es = "d",       output_es = "r", n1 = 50,  n2 = 50)
+# input_es can be of the form "r", "d", "F", "chisq", "p.chisq", "or", "lor" and output_es = "r" or "d"
+
+# Also, it is possible to make multiple transformation at a time, form example a whole column
+
+# convert_es(es = c(.4, .3, .25),input_es = "r", output_es = "d", n1 = c(50, 110, 65), n2 = c(50, 70, 65))
+
+
+# Many more possibilities from Psychmeta : https://cran.r-project.org/web/packages/psychmeta/vignettes/overview.html
+# Dahlke, J. A., & Wiernik, B. M. (2019). psychmeta: An R package for psychometric meta-analysis. Applied Psychological Measurement, 43(5), 415-416. https://doi.org/10.1177/0146621618795933
