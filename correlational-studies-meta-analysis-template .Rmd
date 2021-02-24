@@ -13,10 +13,6 @@ output:
 Author: adrien 
 ---
 
-```{r setting, include=FALSE}
-
-```
-
 This is a RMarkdown template for Correlational studies meta-analysis in Psychology, developed by Adrien Fillon (Ph.D. student) and Dr. Gilad Feldman (Assistant Professor). This is integrated and adapted with reference to Lim and Feldman (2020) and Nanakdewa et al. (2020); experimental meta-analysis template (Yeung et al., 2020), a primer of correlational studies (Quintana, 2015) as well as Fillon et al. (2020) Impact of past behavior normality on regret: Meta-analysis of exceptionality effect. The corresponding datafile is "Correlational-Studies-Meta-Analysis-Template.xlsx" (simulated data). 
 
 For your own analysis, please replace "Variables", Analysis" and "Moderator" with meaningful labels of Cells descriptives column heads, Dependent Variables, Moderators column heads and Moderators categories. In the excel sheet, the box in orange are facultative for the simulation or pretest. To replace efficiently, in RStudio, you can click "edit" then "Replace and find" (or Ctrl+Shift+J). Similarly, in Excel, you can click "Home" then "Find & Select", "Replace", "Replace all".
@@ -57,7 +53,7 @@ library("knitr")
 #In case of packages -- invisible code does not work use install.packages below and load libraries manually"
 
 list.of.packages <- c("readxl", "psychmeta", "TOSTER", "metafor", "tidyverse", 
-                      "metaviz")
+                      "metaviz", "sessioninfo")
 
 new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[
   ,"Package"])]
@@ -126,10 +122,8 @@ metabulate(res_mainanalysis, "results_mainanalysis")
 # The metabulate Function above will create an output word document with all
 # the main correlations from the main document
 ```
-#Mahmoud: I think it would be a good idea to write a brief description of what the authors will find and a small aspect of how to report the findings. This will help guide the readers to understand what they are expected to see following the previous chunk.
 
-Inter-relations
-#Mahmoud: Explain what this chunk's purpose is for.
+Inter-relations.
 
 ```{r inter, message=FALSE, warning=FALSE, include=FALSE}
 
@@ -260,6 +254,12 @@ viz_sunset(res,
            contours = TRUE,
            power_contours =  "continuous")
 
+png('viz_sunset.png')
+
+viz_sunset(res, 
+           contours = TRUE,
+           power_contours =  "continuous")
+dev.off()
 # One can also add the argument true_effect = 0.XX for the minimal effect size of interest.
 
 ```
@@ -274,7 +274,7 @@ viz_sunset(res,
 #The amount of measurement error in a sample of scores is quantified using a reliability coefficient, defined as the proportion of the observed-score variance that is consistent (i.e., believed to be “true”). Conceptually, the reliability coefficient is the correlation between two parallel measures of a construct. The square root of the reliability coefficient also called the measurement quality index; Schmidt & Hunter, 2015) is the correlation between the measured (observed) variable and its underlying latent variable.
 
 knitr::kable(
-adrien<-psychmeta:::summarize_ads(res_mainanalysis) %>% 
+summarizeads<-psychmeta:::summarize_ads(res_mainanalysis) %>% 
   filter(Artifact %in% c("rxxi_irr", "qxi_irr")) %>%
   as_tibble() %>% 
   mutate(k_total = format_num(.$k_total, digits = 0),
@@ -303,3 +303,5 @@ adrien<-psychmeta:::summarize_ads(res_mainanalysis) %>%
 
 # Many more possibilities from Psychmeta : https://cran.r-project.org/web/packages/psychmeta/vignettes/overview.html
 # Dahlke, J. A., & Wiernik, B. M. (2019). psychmeta: An R package for psychometric meta-analysis. Applied Psychological Measurement, 43(5), 415-416. https://doi.org/10.1177/0146621618795933
+
+sessionInfo()
